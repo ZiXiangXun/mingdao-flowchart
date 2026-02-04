@@ -1,6 +1,6 @@
 // config.js
 const CONFIG = {
-    apiDomain: 'http://120.26.103.83:8880',
+    apiDomain: 'https://120.26.103.83:8880',
     
     MINGDAO_API: {
         appKey: 'a0d4aa1144e6941d',
