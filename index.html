@@ -4,71 +4,392 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>业务流程全景图 - 明道云</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+                         "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e4e7ed;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #303133;
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #409EFF;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #fff;
+            color: #606266;
+            border: 1px solid #dcdfe6;
+        }
+        
+        /* 流程图容器 */
+        .flowchart {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            padding: 40px 20px;
+            overflow-x: auto;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        
+        .flow-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 200px;
+        }
+        
+        /* 流程节点 */
+        .flow-node {
+            background: white;
+            border: 2px solid #409EFF;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .flow-node:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .flow-node.sales {
+            border-color: #409EFF;
+            background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+            color: white;
+        }
+        
+        .flow-node.production {
+            border-color: #E6A23C;
+            background: linear-gradient(135deg, #E6A23C 0%, #ebb563 100%);
+            color: white;
+        }
+        
+        .flow-node.issue {
+            border-color: #909399;
+            background: linear-gradient(135deg, #909399 0%, #a6a9ad 100%);
+            color: white;
+        }
+        
+        .flow-node.receipt {
+            border-color: #67C23A;
+            background: linear-gradient(135deg, #67C23A 0%, #85ce61 100%);
+            color: white;
+        }
+        
+        .flow-node.batch {
+            border-color: #67C23A;
+            background: white;
+            color: #67C23A;
+            border-width: 3px;
+        }
+        
+        .flow-node.delivery {
+            border-color: #F56C6C;
+            background: linear-gradient(135deg, #F56C6C 0%, #f78989 100%);
+            color: white;
+        }
+        
+        .node-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .node-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .node-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        
+        .node-data {
+            font-size: 13px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            line-height: 1.6;
+        }
+        
+        .batch .node-data {
+            border-top-color: #67C23A;
+        }
+        
+        /* 箭头 */
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: #909399;
+            min-width: 40px;
+            padding-top: 60px;
+        }
+        
+        /* 图例 */
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-top: 24px;
+            padding: 16px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e4e7ed;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .status-sales { background: #409EFF; }
+        .status-production { background: #E6A23C; }
+        .status-completed { background: #67C23A; }
+        .status-pending { background: #909399; }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📊 业务流程全景图</h1>
             <div class="toolbar">
-                <button class="btn btn-secondary" onclick="app.refresh()">
-                    <span>🔄</span>
-                    <span>刷新</span>
-                </button>
-                <button class="btn btn-secondary" onclick="app.exportImage()">
-                    <span>📥</span>
-                    <span>导出图片</span>
-                </button>
-                <button class="btn btn-primary" onclick="app.goBack()">
-                    <span>←</span>
-                    <span>返回</span>
-                </button>
+                <button class="btn btn-secondary" onclick="location.reload()">🔄 刷新</button>
+                <button class="btn btn-secondary" onclick="alert('导出功能开发中')">📥 导出图片</button>
+                <button class="btn btn-primary" onclick="window.close()">← 返回</button>
             </div>
         </div>
         
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <div>正在加载数据...</div>
-        </div>
-        
-        <div id="error" class="error" style="display: none;">
-            <div class="error-icon">❌</div>
-            <div id="errorMessage"></div>
-            <div style="margin-top: 20px;">
-                <button class="btn btn-primary" onclick="app.refresh()">重试</button>
+        <!-- 流程图 -->
+        <div class="flowchart" id="flowchart">
+            <!-- 第1列：销售订单 -->
+            <div class="flow-column">
+                <div class="flow-node sales">
+                    <div class="node-icon">📋</div>
+                    <div class="node-title">销售订单</div>
+                    <div class="node-subtitle">WXYHY2602000005</div>
+                    <div class="node-data">
+                        XX纺织公司<br/>
+                        💰 150,000元
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 箭头 -->
+            <div class="arrow">→</div>
+            
+            <!-- 第2列：生产订单 -->
+            <div class="flow-column">
+                <div class="flow-node production">
+                    <div class="node-icon">🏭</div>
+                    <div class="node-title">生产订单</div>
+                    <div class="node-subtitle">10000080</div>
+                    <div class="node-data">
+                        260103-R3 YY墨盒<br/>
+                        📊 19100/30000米
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 箭头 -->
+            <div class="arrow">→</div>
+            
+            <!-- 第3列：投料记录 -->
+            <div class="flow-column">
+                <div class="flow-node issue">
+                    <div class="node-icon">📦</div>
+                    <div class="node-title">投料-缸001</div>
+                    <div class="node-data">
+                        ✅ 已投料<br/>
+                        10000米<br/>
+                        批次: PB001
+                    </div>
+                </div>
+                <div class="flow-node issue">
+                    <div class="node-icon">📦</div>
+                    <div class="node-title">投料-缸002</div>
+                    <div class="node-data">
+                        ✅ 已投料<br/>
+                        10000米<br/>
+                        批次: PB002
+                    </div>
+                </div>
+                <div class="flow-node issue">
+                    <div class="node-icon">📦</div>
+                    <div class="node-title">投料-缸003</div>
+                    <div class="node-data">
+                        ⏳ 待投料<br/>
+                        10000米<br/>
+                        批次: PB003
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 箭头 -->
+            <div class="arrow">→</div>
+            
+            <!-- 第4列：完工记录 -->
+            <div class="flow-column">
+                <div class="flow-node receipt">
+                    <div class="node-icon">✅</div>
+                    <div class="node-title">完工-缸001</div>
+                    <div class="node-data">
+                        正品: 9500米<br/>
+                        次品: 400米<br/>
+                        制成率: 99%
+                    </div>
+                </div>
+                <div class="flow-node receipt">
+                    <div class="node-icon">✅</div>
+                    <div class="node-title">完工-缸002</div>
+                    <div class="node-data">
+                        正品: 9600米<br/>
+                        次品: 300米<br/>
+                        制成率: 96%
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 箭头 -->
+            <div class="arrow">→</div>
+            
+            <!-- 第5列：成品批次 -->
+            <div class="flow-column">
+                <div class="flow-node batch">
+                    <div class="node-icon">✨</div>
+                    <div class="node-title">CP001-正品</div>
+                    <div class="node-data">9500米</div>
+                </div>
+                <div class="flow-node batch">
+                    <div class="node-icon">⚠️</div>
+                    <div class="node-title">CP001-次品</div>
+                    <div class="node-data">400米</div>
+                </div>
+                <div class="flow-node batch">
+                    <div class="node-icon">✨</div>
+                    <div class="node-title">CP002-正品</div>
+                    <div class="node-data">9600米</div>
+                </div>
+                <div class="flow-node batch">
+                    <div class="node-icon">⚠️</div>
+                    <div class="node-title">CP002-次品</div>
+                    <div class="node-data">300米</div>
+                </div>
+            </div>
+            
+            <!-- 箭头 -->
+            <div class="arrow">→</div>
+            
+            <!-- 第6列：发货单 -->
+            <div class="flow-column">
+                <div class="flow-node delivery">
+                    <div class="node-icon">🚚</div>
+                    <div class="node-title">SH001</div>
+                    <div class="node-data">
+                        ✅ 已发货<br/>
+                        8000米
+                    </div>
+                </div>
+                <div class="flow-node delivery">
+                    <div class="node-icon">🚚</div>
+                    <div class="node-title">SH002</div>
+                    <div class="node-data">
+                        ⏳ 待发货<br/>
+                        3000米
+                    </div>
+                </div>
             </div>
         </div>
         
-        <div id="chartContainer" class="chart-container" style="display: none;">
-            <!-- 修改：确保Mermaid容器可见 -->
-            <div class="mermaid" id="mermaidChart" style="min-height: 600px; display: flex; justify-content: center; align-items: center;">
-                graph LR
-                    Loading[正在加载...]
-            </div>
-        </div>
-        
+        <!-- 图例 -->
         <div class="legend">
             <div class="legend-item">
-                <div class="legend-icon status-pending"></div>
-                <span>待处理</span>
+                <div class="legend-icon status-sales"></div>
+                <span>销售订单</span>
             </div>
             <div class="legend-item">
-                <div class="legend-icon status-processing"></div>
-                <span>进行中</span>
+                <div class="legend-icon status-production"></div>
+                <span>生产订单</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon status-pending"></div>
+                <span>投料/待处理</span>
             </div>
             <div class="legend-item">
                 <div class="legend-icon status-completed"></div>
-                <span>已完成</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-icon status-cancelled"></div>
-                <span>已取消</span>
+                <span>已完工</span>
             </div>
         </div>
     </div>
-
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+    
+    <script>
+        // 添加点击事件
+        document.querySelectorAll('.flow-node').forEach(node => {
+            node.addEventListener('click', function() {
+                alert('节点：' + this.querySelector('.node-title').textContent + '\n\n💡 在明道云中可以配置跳转到对应记录');
+            });
+        });
+        
+        console.log('✅ 流程图加载成功！');
+    </script>
 </body>
 </html>
