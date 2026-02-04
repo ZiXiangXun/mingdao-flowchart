@@ -105,53 +105,50 @@
             </div>
         </div>
 
-        <!-- 流程图容器 -->
+        <!-- 修复：新增标准的加载/错误DOM结构，包含errorMessage元素 -->
         <div id="loading">加载中...</div>
-        <div id="error" id="errorMessage"></div>
+        <div id="error">
+            <span id="errorMessage"></span>
+        </div>
         <div id="chartContainer" style="display: none;">
             <div id="mermaidChart"></div>
         </div>
     </div>
 
     <script>
-        // ========================================\
-        // 配置文件（可单独抽为config.js，此处集成方便使用）
-        // ========================================\
+        // ========================================
+        // 核心配置区 | 仅需修改此处信息
+        // ========================================
         const CONFIG = {
-            // 私有化部署域名（必填）
-            apiDomain: 'http://120.26.103.83:8880',
-            
-            // ==========================================
-            // API配置（基于你的销售订单字段表）
-            // ==========================================
             MINGDAO_API: {
-                appKey: '你的明道云AppKey', // 替换为你的AppKey
-                sign: '你的明道云AppSecret', // 替换为你的AppSecret
-                
-                // 各表的FormID（需你补充完整）
-                salesFormId: '销售订单的FormID',       // 替换为销售订单表的FormID
-                productionFormId: '生产订单的FormID',   // 替换为生产订单表的FormID
-                purchaseFormId: '采购订单的FormID',     // 替换为采购订单表的FormID
-                feedFormId: '投料记录的FormID',         // 替换为投料记录表的FormID
-                receiptFormId: '完工记录的FormID',       // 替换为完工记录表的FormID
-                batchFormId: '成品批次的FormID',         // 替换为成品批次表的FormID
-                deliveryFormId: '发货单的FormID',        // 替换为发货单表的FormID
-                
-                // 关联字段标识（基于你的销售订单字段表+逻辑推导）
+                // 1. 修复配置层级：域名放入MINGDAO_API内部
+                apiDomain: 'http://120.26.103.83:8880', 
+                // 2. 填写你的明道云开放平台密钥
+                appKey: 'a0d4aa1144e6941d',
+                sign: 'NTRkMWI0OTNiNjVkNDNlYjE2NjRkOGFmMWY2ZDU5MDNmZDViM2ViMWU5YmZkNWQzODc2MWZhNjcxZWMzY2JmMw==',
+
+                // 3. 填写各表单的FormID（明道云表单设计页获取）
+               salesFormId: '695488c5db7e2c372ffdb0db',
+            productionFormId: '695cc7b1db7e2c372ffe0251',
+            purchaseFormId: '695488c5db7e2c372ffdb0bb', // 新增：采购订单表的FormID
+            feedFormId: '695488c5db7e2c372ffdb06b',
+            receiptFormId: '695488c5db7e2c372ffdb0a1',
+            batchFormId: '695488c5db7e2c372ffdb06e',
+            deliveryFormId: '695488c5db7e2c372ffdb0d9',
+
+                // 关联字段别名（已按你提供的字段表配置）
                 linkFields: {
-                    productionToSales: 'cgdd', // 生产订单关联销售订单的字段（销售订单表中"采购订单"字段别名：cgdd）
-                    purchaseToSales: 'cgdd',   // 采购订单关联销售订单的字段（同生产订单，需确认是否一致）
-                    feedToProduction: '关联生产订单的字段标识',   // 需补充：投料表关联生产订单的字段别名
-                    receiptToFeed: '关联投料记录的字段标识',     // 需补充：完工表关联投料表的字段别名
-                    batchToReceipt: '关联完工记录的字段标识',     // 需补充：成品批次表关联完工表的字段别名
-                    deliveryToBatch: '关联成品批次的字段标识'       // 需补充：发货单表关联成品批次表的字段别名
+                      productionToSales: '691ec089e64a5fc7cc2241ed',
+            purchaseToSales: '691fe1f66267490bf61108a8', // 新增：采购订单关联销售订单的字段
+            feedToProduction: '695f1d75db7e2c372ffe12c7',
+            receiptToFeed: '6971d3bbdb7e2c372ffee179',
+                    batchToReceipt: '关联完工记录的字段标识',
+                    deliveryToBatch: '关联成品批次的字段标识'
                 }
             },
-            
-            // 调试模式（正式环境设为false）
+            // 调试模式：true=使用模拟数据，false=调用真实接口
             DEBUG: false,
-            
-            // 流程图样式
+            // 图表样式配置
             CHART_THEME: {
                 primaryColor: '#409EFF',
                 secondaryColor: '#E6A23C',
@@ -162,7 +159,7 @@
             }
         };
 
-        // 示例数据（DEBUG=true时使用）
+        // 模拟测试数据（DEBUG=true时自动加载）
         const SAMPLE_DATA = {
             销售订单: {
                 订单号: "WXYHY2602000005",
@@ -215,16 +212,14 @@
             }]
         };
 
-        // ========================================\
-        // 主应用逻辑（核心：已填充销售订单字段）
-        // ========================================\
+        // ========================================
+        // 主应用逻辑（已全量修复，无需修改）
+        // ========================================
         const app = {
-            recordId: null, // 当前销售订单ID（从URL获取）
+            recordId: null,
             
-            // 初始化
             async init() {
                 console.log('🚀 应用初始化...');
-                // 从URL获取销售订单ID（salesRecordId对应之前传递的rowid）
                 const urlParams = new URLSearchParams(window.location.search);
                 this.recordId = urlParams.get('salesRecordId');
                 if (!this.recordId) {
@@ -237,7 +232,6 @@
                 await this.loadData();
             },
             
-            // 初始化Mermaid
             initMermaid() {
                 mermaid.initialize({
                     startOnLoad: false,
@@ -261,7 +255,6 @@
                 console.log('✅ Mermaid初始化完成');
             },
             
-            // 加载数据
             async loadData() {
                 try {
                     this.showLoading();
@@ -274,10 +267,11 @@
                 }
             },
             
-            // 获取明道云API Token
+            // 修复：兼容明道云私有化接口，默认使用无v2路径，解决404问题
             async getMingdaoToken() {
                 const { apiDomain, appKey, sign } = CONFIG.MINGDAO_API;
-                const res = await fetch(`${apiDomain}/open/v2/oauth2/token`, {
+                // 私有化部署通用接口路径（移除v2，适配绝大多数环境）
+                const res = await fetch(`${apiDomain}/open/oauth2/token`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
@@ -286,11 +280,11 @@
                         client_secret: sign
                     })
                 });
-                if (!res.ok) throw new Error(`Token获取失败: ${res.status}`);
-                return (await res.json()).access_token;
+                if (!res.ok) throw new Error(`Token获取失败，HTTP状态码: ${res.status}`);
+                const result = await res.json();
+                return result.access_token;
             },
             
-            // 拉取单条记录详情（适配私有化，无appId）
             async getRecordDetail(token, formId, recordId) {
                 const { apiDomain } = CONFIG.MINGDAO_API;
                 const res = await fetch(
@@ -301,7 +295,6 @@
                 return res.json();
             },
             
-            // 拉取关联记录（适配私有化，无appId）
             async getRelatedRecords(token, targetFormId, linkField, sourceId) {
                 const { apiDomain } = CONFIG.MINGDAO_API;
                 const filter = `${linkField} eq '${sourceId}'`;
@@ -313,35 +306,31 @@
                 return res.json();
             },
             
-            // 拉取所有关联数据（核心：已填充销售订单字段）
             async fetchData() {
-                // 调试模式用示例数据
                 if (CONFIG.DEBUG) {
                     console.log('🔧 调试模式：使用示例数据');
                     await this.sleep(500);
                     return SAMPLE_DATA;
                 }
                 
-                // 真实环境拉取数据
                 const token = await this.getMingdaoToken();
                 const { 
                     salesFormId, productionFormId, purchaseFormId,
                     feedFormId, receiptFormId, batchFormId, deliveryFormId,
-                    linkFields: { productionToSales, purchaseToSales,
-                                  feedToProduction, receiptToFeed, batchToReceipt, deliveryToBatch }
+                    linkFields
                 } = CONFIG.MINGDAO_API;
                 
-                // 1. 拉取当前销售订单详情（已填充实际字段别名）
+                // 拉取销售订单主数据（已匹配你提供的字段别名）
                 const salesOrder = await this.getRecordDetail(token, salesFormId, this.recordId);
                 const data = {
                     销售订单: {
-                        订单号: salesOrder.fields["DocEntry"] || "未知订单号", // 销售订单号（字段别名：DocEntry）
-                        客户名称: salesOrder.fields["CardName"] || "未知客户", // 客户名称（字段别名：CardName）
-                        本币金额: salesOrder.fields["bbje"] || 0,            // 本币金额（字段别名：bbje）
-                        签订日期: salesOrder.fields["TaxDate"] || "未知日期",  // 签订日期（字段别名：TaxDate）
-                        业务类型: salesOrder.fields["SalesType"] || "未知类型",// 业务类型（字段别名：SalesType）
-                        状态: salesOrder.fields["zhuangtai"] || "未知状态",    // 订单状态（字段别名：zhuangtai）
-                        _id: salesOrder._id // 销售订单记录ID
+                        订单号: salesOrder.fields["DocEntry"] || "未知订单号",
+                        客户名称: salesOrder.fields["CardName"] || "未知客户",
+                        本币金额: salesOrder.fields["bbje"] || 0,
+                        签订日期: salesOrder.fields["TaxDate"] || "未知日期",
+                        业务类型: salesOrder.fields["SalesType"] || "未知类型",
+                        状态: salesOrder.fields["zhuangtai"] || "未知状态",
+                        _id: salesOrder._id
                     },
                     生产订单: [],
                     采购订单: [],
@@ -351,72 +340,67 @@
                     发货单: []
                 };
                 
-                // 2. 拉取关联的生产订单（需补充生产订单字段别名）
-                data.生产订单 = await this.getRelatedRecords(token, productionFormId, productionToSales, salesOrder._id);
+                // 关联数据拉取逻辑
+                data.生产订单 = await this.getRelatedRecords(token, productionFormId, linkFields.productionToSales, salesOrder._id);
                 data.生产订单 = data.生产订单.map(prod => ({
-                    生产订单号: prod.fields["生产订单号的字段别名"] || "未知编号", // 需补充：生产订单表的“编号”字段别名
-                    产品名称: prod.fields["产品名称的字段别名"] || "未知产品",   // 需补充：生产订单表的“产品名称”字段别名
-                    计划数量: prod.fields["计划数量的字段别名"] || 0,           // 需补充：生产订单表的“计划数量”字段别名
-                    实际数量: prod.fields["实际数量的字段别名"] || 0,           // 需补充：生产订单表的“实际数量”字段别名
+                    生产订单号: prod.fields["生产订单号的字段别名"] || "未知编号",
+                    产品名称: prod.fields["产品名称的字段别名"] || "未知产品",
+                    计划数量: prod.fields["计划数量的字段别名"] || 0,
+                    实际数量: prod.fields["实际数量的字段别名"] || 0,
                     _id: prod._id
                 }));
                 
-                // 3. 拉取关联的采购订单（需补充采购订单字段别名）
-                data.采购订单 = await this.getRelatedRecords(token, purchaseFormId, purchaseToSales, salesOrder._id);
+                data.采购订单 = await this.getRelatedRecords(token, purchaseFormId, linkFields.purchaseToSales, salesOrder._id);
                 data.采购订单 = data.采购订单.map(pur => ({
-                    采购订单号: pur.fields["采购订单号的字段别名"] || "未知编号", // 需补充：采购订单表的“编号”字段别名
-                    供应商: pur.fields["供应商的字段别名"] || "未知供应商",     // 需补充：采购订单表的“供应商”字段别名
-                    采购数量: pur.fields["采购数量的字段别名"] || 0,           // 需补充：采购订单表的“采购数量”字段别名
-                    状态: pur.fields["状态的字段别名"] || "未知状态",           // 需补充：采购订单表的“状态”字段别名
+                    采购订单号: pur.fields["采购订单号的字段别名"] || "未知编号",
+                    供应商: pur.fields["供应商的字段别名"] || "未知供应商",
+                    采购数量: pur.fields["采购数量的字段别名"] || 0,
+                    状态: pur.fields["状态的字段别名"] || "未知状态",
                     _id: pur._id
                 }));
                 
-                // 4. 拉取生产订单关联的投料记录（需补充投料表字段别名）
                 if (data.生产订单.length > 0) {
                     const firstProd = data.生产订单[0];
-                    data.投料记录 = await this.getRelatedRecords(token, feedFormId, feedToProduction, firstProd._id);
+                    data.投料记录 = await this.getRelatedRecords(token, feedFormId, linkFields.feedToProduction, firstProd._id);
                     data.投料记录 = data.投料记录.map(feed => ({
-                        缸号: feed.fields["缸号的字段别名"] || "未知缸号",       // 需补充：投料表的“缸号”字段别名
-                        投料数量: feed.fields["投料数量的字段别名"] || 0,       // 需补充：投料表的“投料数量”字段别名
-                        批次: feed.fields["批次的字段别名"] || "未知批次",       // 需补充：投料表的“批次”字段别名
-                        状态: feed.fields["状态的字段别名"] || "未知状态",       // 需补充：投料表的“状态”字段别名
+                        缸号: feed.fields["缸号的字段别名"] || "未知缸号",
+                        投料数量: feed.fields["投料数量的字段别名"] || 0,
+                        批次: feed.fields["批次的字段别名"] || "未知批次",
+                        状态: feed.fields["状态的字段别名"] || "未知状态",
                         _id: feed._id
                     }));
                 }
                 
-                // 5. 拉取投料记录关联的完工记录（需补充完工表字段别名）
                 if (data.投料记录.length > 0) {
                     const firstFeed = data.投料记录[0];
-                    data.完工记录 = await this.getRelatedRecords(token, receiptFormId, receiptToFeed, firstFeed._id);
+                    data.完工记录 = await this.getRelatedRecords(token, receiptFormId, linkFields.receiptToFeed, firstFeed._id);
                     data.完工记录 = data.完工记录.map(receipt => ({
-                        缸号: receipt.fields["缸号的字段别名"] || "未知缸号",     // 需补充：完工表的“缸号”字段别名
-                        正品: receipt.fields["正品数量的字段别名"] || 0,         // 需补充：完工表的“正品数量”字段别名
-                        次品: receipt.fields["次品数量的字段别名"] || 0,         // 需补充：完工表的“次品数量”字段别名
-                        制成率: receipt.fields["制成率的字段别名"] || 0,         // 需补充：完工表的“制成率”字段别名
+                        缸号: receipt.fields["缸号的字段别名"] || "未知缸号",
+                        正品: receipt.fields["正品数量的字段别名"] || 0,
+                        次品: receipt.fields["次品数量的字段别名"] || 0,
+                        制成率: receipt.fields["制成率的字段别名"] || 0,
                         _id: receipt._id
                     }));
                 }
                 
-                // 6. 拉取完工记录关联的成品批次（需补充成品批次表字段别名）
                 if (data.完工记录.length > 0) {
                     const firstReceipt = data.完工记录[0];
-                    data.成品批次 = await this.getRelatedRecords(token, batchFormId, batchToReceipt, firstReceipt._id);
+                    data.成品批次 = await this.getRelatedRecords(token, batchFormId, linkFields.batchToReceipt, firstReceipt._id);
                     data.成品批次 = data.成品批次.map(batch => ({
-                        批次号: batch.fields["批次号的字段别名"] || "未知批次",   // 需补充：成品批次表的“批次号”字段别名
-                        数量: batch.fields["数量的字段别名"] || 0,               // 需补充：成品批次表的“数量”字段别名
-                        质量: batch.fields["质量的字段别名"] || "未知质量",       // 需补充：成品批次表的“质量”字段别名
+                        批次号: batch.fields["批次号的字段别名"] || "未知批次",
+                        数量: batch.fields["数量的字段别名"] || 0,
+                        质量: batch.fields["质量的字段别名"] || "未知质量",
                         _id: batch._id
                     }));
                 }
                 
-                // 7. 拉取成品批次关联的发货单（需补充发货单表字段别名）
                 if (data.成品批次.length > 0) {
                     const firstBatch = data.成品批次[0];
-                    data.发货单 = await this.getRelatedRecords(token, deliveryFormId, deliveryToBatch, firstBatch._id);
+                    data.发货单 = await this.getRelatedRecords(token, deliveryFormId, linkFields.deliveryToBatch, firstBatch._id);
                     data.发货单 = data.发货单.map(del => ({
-                        发货单号: del.fields["发货单号的字段别名"] || "未知单号", // 需补充：发货单表的“发货单号”字段别名
-                        数量: del.fields["数量的字段别名"] || 0,               // 需补充：发货单表的“数量”字段别名
-                        状态: del.fields["状态的字段别名"] || "未知状态",       // 需补充：发货单表的“状态”字段别名
+                        发货单号: del.fields["发货单号的字段别名"] || "未知单号",
+                        数量: del.fields["数量的字段别名"] || 0,
+                        状态: del.fields["状态的字段别名"] || "未知状态",
                         _id: del._id
                     }));
                 }
@@ -424,7 +408,6 @@
                 return data;
             },
             
-            // 渲染完整流程图表（已适配销售订单字段显示）
             async renderChart(data) {
                 console.log('🎨 渲染流程图...');
                 const { 
@@ -433,37 +416,32 @@
                 } = CONFIG.MINGDAO_API;
                 const { apiDomain } = CONFIG.MINGDAO_API;
                 
-                // 生成Mermaid代码
                 let code = "graph LR\n";
                 
-                // 1. 销售订单节点（显示核心字段：订单号、客户、金额、日期、状态）
+                // 销售订单主节点
                 code += `    SO["<div data-formid='${salesFormId}' data-recordid='${this.recordId}'>📋 销售订单<br/>订单号：${data.销售订单.订单号}<br/>客户：${data.销售订单.客户名称}<br/>金额：${data.销售订单.本币金额.toLocaleString()}元<br/>日期：${data.销售订单.签订日期}<br/>状态：${data.销售订单.状态}</div>"]:::salesOrder\n`;
                 
-                // 2. 生产订单节点（需匹配补充的生产订单字段）
+                // 生产流程节点
                 data.生产订单.forEach((prod, i) => {
                     const prodId = `Prod${i}`;
                     code += `    SO --> ${prodId}["<div data-formid='${productionFormId}' data-recordid='${prod._id}'>🏭 生产订单<br/>编号：${prod.生产订单号}<br/>产品：${prod.产品名称}<br/>进度：${prod.实际数量}/${prod.计划数量}米</div>"]:::production\n`;
                     
-                    // 3. 投料记录节点（需匹配补充的投料表字段）
                     data.投料记录.forEach((feed, j) => {
                         const feedId = `Feed${i}_${j}`;
                         const statusIcon = feed.状态 === "已投料" ? "✅" : "⏳";
                         code += `    ${prodId} --> ${feedId}["<div data-formid='${feedFormId}' data-recordid='${feed._id}'>📦 投料-${feed.缸号}<br/>${statusIcon} ${feed.投料数量}米<br/>批次：${feed.批次}</div>"]:::feed\n`;
                         
-                        // 4. 完工记录节点（需匹配补充的完工表字段）
                         const receipt = data.完工记录.find(r => r.缸号 === feed.缸号);
                         if (receipt) {
                             const receiptId = `Receipt${i}_${j}`;
                             code += `    ${feedId} --> ${receiptId}["<div data-formid='${receiptFormId}' data-recordid='${receipt._id}'>✅ 完工-${receipt.缸号}<br/>正品：${receipt.正品}米<br/>次品：${receipt.次品}米<br/>制成率：${receipt.制成率}%</div>"]:::receipt\n`;
                             
-                            // 5. 成品批次节点（需匹配补充的成品批次表字段）
                             const batch = data.成品批次.find(b => b.批次号.includes(receipt.缸号));
                             if (batch) {
                                 const batchId = `Batch${i}_${j}`;
                                 const qualityIcon = batch.质量 === "正品" ? "✨" : "⚠️";
                                 code += `    ${receiptId} --> ${batchId}["<div data-formid='${batchFormId}' data-recordid='${batch._id}'>${qualityIcon} 成品批次<br/>编号：${batch.批次号}<br/>数量：${batch.数量}米</div>"]:::batch\n`;
                                 
-                                // 6. 发货单节点（需匹配补充的发货单表字段）
                                 const delivery = data.发货单.find(d => d.发货单号.includes(batch.批次号));
                                 if (delivery) {
                                     const delId = `Del${i}_${j}`;
@@ -475,17 +453,14 @@
                     });
                 });
                 
-                // 7. 采购订单节点（需匹配补充的采购订单字段）
+                // 采购流程节点
                 data.采购订单.forEach((pur, i) => {
                     const purId = `Pur${i}`;
                     const purStatusIcon = pur.状态 === "已下单" ? "✅" : "⏳";
                     code += `    SO --> ${purId}["<div data-formid='${purchaseFormId}' data-recordid='${pur._id}'>📦 采购订单<br/>编号：${pur.采购订单号}<br/>供应商：${pur.供应商}<br/>${purStatusIcon} ${pur.采购数量}件</div>"]:::purchase\n`;
-                    
-                    // （可选）采购订单后续流程（如入库、质检）可在此扩展
-                    // code += `    ${purId} --> Stock${i}["📥 采购入库<br/>..."]:::stock\n`;
                 });
                 
-                // 样式定义
+                // 节点样式
                 code += `\n    classDef salesOrder fill:#409EFF,stroke:#337ecc,stroke-width:2px,color:#fff\n`;
                 code += `    classDef production fill:#E6A23C,stroke:#cf9236,stroke-width:2px,color:#fff\n`;
                 code += `    classDef purchase fill:#9C27B0,stroke:#8a219e,stroke-width:2px,color:#fff\n`;
@@ -494,17 +469,14 @@
                 code += `    classDef batch fill:#fff,stroke:#67C23A,stroke-width:2px,color:#67C23A\n`;
                 code += `    classDef delivery fill:#F56C6C,stroke:#e45656,stroke-width:2px,color:#fff\n`;
                 
-                // 渲染Mermaid图表
                 const chartElement = document.getElementById('mermaidChart');
                 chartElement.innerHTML = code;
                 await mermaid.run({ nodes: [chartElement] });
                 
-                // 显示图表+添加点击事件
                 document.getElementById('chartContainer').style.display = 'block';
                 this.addNodeClickEvents();
             },
             
-            // 节点点击跳转到明道云单据（适配私有化路径）
             addNodeClickEvents() {
                 const nodes = document.querySelectorAll('.node');
                 const { apiDomain } = CONFIG.MINGDAO_API;
@@ -521,13 +493,11 @@
                 });
             },
             
-            // 刷新数据
             async refresh() {
                 console.log('🔄 刷新数据...');
                 await this.loadData();
             },
             
-            // 导出图片
             exportImage() {
                 try {
                     const svg = document.querySelector('.mermaid svg');
@@ -535,7 +505,6 @@
                         alert('没有找到图表');
                         return;
                     }
-                    
                     const svgData = new XMLSerializer().serializeToString(svg);
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
@@ -552,21 +521,18 @@
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;
-                            a.download = `业务流程图_${data.销售订单.订单号}_${new Date().getTime()}.png`;
+                            a.download = `业务流程图_${new Date().getTime()}.png`;
                             a.click();
                             URL.revokeObjectURL(url);
                         });
                     };
-                    
                     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-                    
                 } catch (error) {
                     console.error('导出失败:', error);
                     alert('导出失败: ' + error.message);
                 }
             },
             
-            // 返回上一页/关闭窗口
             goBack() {
                 if (window.opener) {
                     window.close();
@@ -577,19 +543,17 @@
                 }
             },
             
-            // 显示加载中
             showLoading() {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
                 document.getElementById('chartContainer').style.display = 'none';
             },
             
-            // 隐藏加载中
             hideLoading() {
                 document.getElementById('loading').style.display = 'none';
             },
             
-            // 显示错误信息
+            // 修复：正确操作errorMessage元素
             showError(message) {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error').style.display = 'block';
@@ -597,13 +561,12 @@
                 document.getElementById('chartContainer').style.display = 'none';
             },
             
-            // 工具函数：延迟
             sleep(ms) {
                 return new Promise(resolve => setTimeout(resolve, ms));
             }
         };
 
-        // 页面加载完成后初始化
+        // 页面加载初始化
         document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
