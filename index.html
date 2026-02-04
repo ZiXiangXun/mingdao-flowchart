@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>业务流程全景图 - 明道云</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 业务流程全景图</h1>
+            <div class="toolbar">
+                <button class="btn btn-secondary" onclick="app.refresh()">
+                    <span>🔄</span>
+                    <span>刷新</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.exportImage()">
+                    <span>📥</span>
+                    <span>导出图片</span>
+                </button>
+                <button class="btn btn-primary" onclick="app.goBack()">
+                    <span>←</span>
+                    <span>返回</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <div>正在加载数据...</div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            <div class="error-icon">❌</div>
+            <div id="errorMessage"></div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="app.refresh()">重试</button>
+            </div>
+        </div>
+        
+        <div id="chartContainer" class="chart-container" style="display: none;">
+            <div class="mermaid" id="mermaidChart"></div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-icon status-pending"></div>
+                <span>待处理</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon status-processing"></div>
+                <span>进行中</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon status-completed"></div>
+                <span>已完成</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon status-cancelled"></div>
+                <span>已取消</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
