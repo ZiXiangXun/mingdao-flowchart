@@ -1,6 +1,6 @@
 // config.js
 const CONFIG = {
-    apiDomain: 'https://120.26.103.83:8880',
+    apiDomain: 'https://app.dayatex.com',
     
     MINGDAO_API: {
         appKey: 'a0d4aa1144e6941d',
