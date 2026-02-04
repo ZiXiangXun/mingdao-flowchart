@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>业务流程全景图 - 明道云</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -67,145 +69,29 @@
         }
         
         /* 流程图容器 */
-        .flowchart {
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
-            padding: 40px 20px;
+        #chartContainer {
+            padding: 20px;
             overflow-x: auto;
             background: #fafafa;
             border-radius: 8px;
+            margin: 20px 0;
         }
         
-        .flow-column {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            min-width: 200px;
-        }
-        
-        /* 流程节点 */
-        .flow-node {
-            background: white;
-            border: 2px solid #409EFF;
-            border-radius: 8px;
-            padding: 20px;
+        /* 加载中/错误提示 */
+        #loading, #error {
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        
-        .flow-node:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .flow-node.sales {
-            border-color: #409EFF;
-            background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
-            color: white;
-        }
-        
-        .flow-node.production {
-            border-color: #E6A23C;
-            background: linear-gradient(135deg, #E6A23C 0%, #ebb563 100%);
-            color: white;
-        }
-        
-        .flow-node.issue {
-            border-color: #909399;
-            background: linear-gradient(135deg, #909399 0%, #a6a9ad 100%);
-            color: white;
-        }
-        
-        .flow-node.receipt {
-            border-color: #67C23A;
-            background: linear-gradient(135deg, #67C23A 0%, #85ce61 100%);
-            color: white;
-        }
-        
-        .flow-node.batch {
-            border-color: #67C23A;
-            background: white;
-            color: #67C23A;
-            border-width: 3px;
-        }
-        
-        .flow-node.delivery {
-            border-color: #F56C6C;
-            background: linear-gradient(135deg, #F56C6C 0%, #f78989 100%);
-            color: white;
-        }
-        
-        .node-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-        
-        .node-title {
+            padding: 50px;
             font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 8px;
         }
         
-        .node-subtitle {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-bottom: 4px;
+        #error {
+            color: #F56C6C;
+            display: none;
         }
         
-        .node-data {
-            font-size: 13px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(255,255,255,0.3);
-            line-height: 1.6;
+        #loading {
+            display: none;
         }
-        
-        .batch .node-data {
-            border-top-color: #67C23A;
-        }
-        
-        /* 箭头 */
-        .arrow {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            color: #909399;
-            min-width: 40px;
-            padding-top: 60px;
-        }
-        
-        /* 图例 */
-        .legend {
-            display: flex;
-            gap: 24px;
-            margin-top: 24px;
-            padding: 16px;
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #e4e7ed;
-            flex-wrap: wrap;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .legend-icon {
-            width: 16px;
-            height: 16px;
-            border-radius: 3px;
-        }
-        
-        .status-sales { background: #409EFF; }
-        .status-production { background: #E6A23C; }
-        .status-completed { background: #67C23A; }
-        .status-pending { background: #909399; }
     </style>
 </head>
 <body>
@@ -213,183 +99,512 @@
         <div class="header">
             <h1>📊 业务流程全景图</h1>
             <div class="toolbar">
-                <button class="btn btn-secondary" onclick="location.reload()">🔄 刷新</button>
-                <button class="btn btn-secondary" onclick="alert('导出功能开发中')">📥 导出图片</button>
-                <button class="btn btn-primary" onclick="window.close()">← 返回</button>
+                <button class="btn btn-secondary" onclick="app.refresh()">🔄 刷新</button>
+                <button class="btn btn-secondary" onclick="app.exportImage()">📥 导出图片</button>
+                <button class="btn btn-primary" onclick="app.goBack()">← 返回</button>
             </div>
         </div>
-        
-        <!-- 流程图 -->
-        <div class="flowchart" id="flowchart">
-            <!-- 第1列：销售订单 -->
-            <div class="flow-column">
-                <div class="flow-node sales">
-                    <div class="node-icon">📋</div>
-                    <div class="node-title">销售订单</div>
-                    <div class="node-subtitle">WXYHY2602000005</div>
-                    <div class="node-data">
-                        XX纺织公司<br/>
-                        💰 150,000元
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 箭头 -->
-            <div class="arrow">→</div>
-            
-            <!-- 第2列：生产订单 -->
-            <div class="flow-column">
-                <div class="flow-node production">
-                    <div class="node-icon">🏭</div>
-                    <div class="node-title">生产订单</div>
-                    <div class="node-subtitle">10000080</div>
-                    <div class="node-data">
-                        260103-R3 YY墨盒<br/>
-                        📊 19100/30000米
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 箭头 -->
-            <div class="arrow">→</div>
-            
-            <!-- 第3列：投料记录 -->
-            <div class="flow-column">
-                <div class="flow-node issue">
-                    <div class="node-icon">📦</div>
-                    <div class="node-title">投料-缸001</div>
-                    <div class="node-data">
-                        ✅ 已投料<br/>
-                        10000米<br/>
-                        批次: PB001
-                    </div>
-                </div>
-                <div class="flow-node issue">
-                    <div class="node-icon">📦</div>
-                    <div class="node-title">投料-缸002</div>
-                    <div class="node-data">
-                        ✅ 已投料<br/>
-                        10000米<br/>
-                        批次: PB002
-                    </div>
-                </div>
-                <div class="flow-node issue">
-                    <div class="node-icon">📦</div>
-                    <div class="node-title">投料-缸003</div>
-                    <div class="node-data">
-                        ⏳ 待投料<br/>
-                        10000米<br/>
-                        批次: PB003
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 箭头 -->
-            <div class="arrow">→</div>
-            
-            <!-- 第4列：完工记录 -->
-            <div class="flow-column">
-                <div class="flow-node receipt">
-                    <div class="node-icon">✅</div>
-                    <div class="node-title">完工-缸001</div>
-                    <div class="node-data">
-                        正品: 9500米<br/>
-                        次品: 400米<br/>
-                        制成率: 99%
-                    </div>
-                </div>
-                <div class="flow-node receipt">
-                    <div class="node-icon">✅</div>
-                    <div class="node-title">完工-缸002</div>
-                    <div class="node-data">
-                        正品: 9600米<br/>
-                        次品: 300米<br/>
-                        制成率: 96%
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 箭头 -->
-            <div class="arrow">→</div>
-            
-            <!-- 第5列：成品批次 -->
-            <div class="flow-column">
-                <div class="flow-node batch">
-                    <div class="node-icon">✨</div>
-                    <div class="node-title">CP001-正品</div>
-                    <div class="node-data">9500米</div>
-                </div>
-                <div class="flow-node batch">
-                    <div class="node-icon">⚠️</div>
-                    <div class="node-title">CP001-次品</div>
-                    <div class="node-data">400米</div>
-                </div>
-                <div class="flow-node batch">
-                    <div class="node-icon">✨</div>
-                    <div class="node-title">CP002-正品</div>
-                    <div class="node-data">9600米</div>
-                </div>
-                <div class="flow-node batch">
-                    <div class="node-icon">⚠️</div>
-                    <div class="node-title">CP002-次品</div>
-                    <div class="node-data">300米</div>
-                </div>
-            </div>
-            
-            <!-- 箭头 -->
-            <div class="arrow">→</div>
-            
-            <!-- 第6列：发货单 -->
-            <div class="flow-column">
-                <div class="flow-node delivery">
-                    <div class="node-icon">🚚</div>
-                    <div class="node-title">SH001</div>
-                    <div class="node-data">
-                        ✅ 已发货<br/>
-                        8000米
-                    </div>
-                </div>
-                <div class="flow-node delivery">
-                    <div class="node-icon">🚚</div>
-                    <div class="node-title">SH002</div>
-                    <div class="node-data">
-                        ⏳ 待发货<br/>
-                        3000米
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 图例 -->
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-icon status-sales"></div>
-                <span>销售订单</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-icon status-production"></div>
-                <span>生产订单</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-icon status-pending"></div>
-                <span>投料/待处理</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-icon status-completed"></div>
-                <span>已完工</span>
-            </div>
+
+        <!-- 流程图容器 -->
+        <div id="loading">加载中...</div>
+        <div id="error" id="errorMessage"></div>
+        <div id="chartContainer" style="display: none;">
+            <div id="mermaidChart"></div>
         </div>
     </div>
-    
+
     <script>
-        // 添加点击事件
-        document.querySelectorAll('.flow-node').forEach(node => {
-            node.addEventListener('click', function() {
-                alert('节点：' + this.querySelector('.node-title').textContent + '\n\n💡 在明道云中可以配置跳转到对应记录');
-            });
-        });
-        
-        console.log('✅ 流程图加载成功！');
+        // ========================================\
+        // 配置文件（可单独抽为config.js，此处集成方便使用）
+        // ========================================\
+        const CONFIG = {
+            // 私有化部署域名（必填）
+            apiDomain: 'https://app.dayatex.com',
+            
+            // ==========================================
+            // API配置（基于你的销售订单字段表）
+            // ==========================================
+            MINGDAO_API: {
+                appKey: '你的明道云AppKey', // 替换为你的AppKey
+                sign: '你的明道云AppSecret', // 替换为你的AppSecret
+                
+                // 各表的FormID（需你补充完整）
+                salesFormId: '销售订单的FormID',       // 替换为销售订单表的FormID
+                productionFormId: '生产订单的FormID',   // 替换为生产订单表的FormID
+                purchaseFormId: '采购订单的FormID',     // 替换为采购订单表的FormID
+                feedFormId: '投料记录的FormID',         // 替换为投料记录表的FormID
+                receiptFormId: '完工记录的FormID',       // 替换为完工记录表的FormID
+                batchFormId: '成品批次的FormID',         // 替换为成品批次表的FormID
+                deliveryFormId: '发货单的FormID',        // 替换为发货单表的FormID
+                
+                // 关联字段标识（基于你的销售订单字段表+逻辑推导）
+                linkFields: {
+                    productionToSales: 'cgdd', // 生产订单关联销售订单的字段（销售订单表中"采购订单"字段别名：cgdd）
+                    purchaseToSales: 'cgdd',   // 采购订单关联销售订单的字段（同生产订单，需确认是否一致）
+                    feedToProduction: '关联生产订单的字段标识',   // 需补充：投料表关联生产订单的字段别名
+                    receiptToFeed: '关联投料记录的字段标识',     // 需补充：完工表关联投料表的字段别名
+                    batchToReceipt: '关联完工记录的字段标识',     // 需补充：成品批次表关联完工表的字段别名
+                    deliveryToBatch: '关联成品批次的字段标识'       // 需补充：发货单表关联成品批次表的字段别名
+                }
+            },
+            
+            // 调试模式（正式环境设为false）
+            DEBUG: false,
+            
+            // 流程图样式
+            CHART_THEME: {
+                primaryColor: '#409EFF',
+                secondaryColor: '#E6A23C',
+                successColor: '#67C23A',
+                warningColor: '#E6A23C',
+                dangerColor: '#F56C6C',
+                infoColor: '#909399'
+            }
+        };
+
+        // 示例数据（DEBUG=true时使用）
+        const SAMPLE_DATA = {
+            销售订单: {
+                订单号: "WXYHY2602000005",
+                客户名称: "XX纺织公司",
+                本币金额: 150000,
+                签订日期: "2026-02-04",
+                业务类型: "外销订单",
+                状态: "执行中",
+                _id: "sales-123"
+            },
+            生产订单: [{
+                生产订单号: "10000080",
+                产品名称: "260103-R3 YY墨盒",
+                计划数量: 30000,
+                实际数量: 19100,
+                _id: "prod-123"
+            }],
+            采购订单: [{
+                采购订单号: "CG001-2026",
+                供应商: "XX材料厂",
+                采购数量: 50000,
+                状态: "已下单",
+                _id: "pur-123"
+            }],
+            投料记录: [{
+                缸号: "001",
+                投料数量: 10000,
+                批次: "PB001",
+                状态: "已投料",
+                _id: "feed-123"
+            }],
+            完工记录: [{
+                缸号: "001",
+                正品: 9500,
+                次品: 400,
+                制成率: 99,
+                _id: "receipt-123"
+            }],
+            成品批次: [{
+                批次号: "CP001-正品",
+                数量: 9500,
+                质量: "正品",
+                _id: "batch-123"
+            }],
+            发货单: [{
+                发货单号: "SH001",
+                数量: 8000,
+                状态: "已发货",
+                _id: "del-123"
+            }]
+        };
+
+        // ========================================\
+        // 主应用逻辑（核心：已填充销售订单字段）
+        // ========================================\
+        const app = {
+            recordId: null, // 当前销售订单ID（从URL获取）
+            
+            // 初始化
+            async init() {
+                console.log('🚀 应用初始化...');
+                // 从URL获取销售订单ID（salesRecordId对应之前传递的rowid）
+                const urlParams = new URLSearchParams(window.location.search);
+                this.recordId = urlParams.get('salesRecordId');
+                if (!this.recordId) {
+                    this.showError('未获取到销售订单ID，请从明道云订单详情页跳转');
+                    return;
+                }
+                console.log('📝 当前销售订单ID:', this.recordId);
+                
+                this.initMermaid();
+                await this.loadData();
+            },
+            
+            // 初始化Mermaid
+            initMermaid() {
+                mermaid.initialize({
+                    startOnLoad: false,
+                    theme: 'default',
+                    themeVariables: {
+                        primaryColor: CONFIG.CHART_THEME.primaryColor,
+                        primaryTextColor: '#fff',
+                        primaryBorderColor: '#337ecc',
+                        lineColor: '#606266',
+                        secondaryColor: CONFIG.CHART_THEME.secondaryColor,
+                        tertiaryColor: CONFIG.CHART_THEME.successColor
+                    },
+                    flowchart: {
+                        useMaxWidth: false,
+                        htmlLabels: true,
+                        curve: 'basis',
+                        padding: 20
+                    },
+                    securityLevel: 'loose'
+                });
+                console.log('✅ Mermaid初始化完成');
+            },
+            
+            // 加载数据
+            async loadData() {
+                try {
+                    this.showLoading();
+                    const data = await this.fetchData();
+                    await this.renderChart(data);
+                    this.hideLoading();
+                } catch (error) {
+                    console.error('❌ 加载失败:', error);
+                    this.showError('加载失败: ' + error.message);
+                }
+            },
+            
+            // 获取明道云API Token
+            async getMingdaoToken() {
+                const { apiDomain, appKey, sign } = CONFIG.MINGDAO_API;
+                const res = await fetch(`${apiDomain}/open/v2/oauth2/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        grant_type: 'client_credentials',
+                        client_id: appKey,
+                        client_secret: sign
+                    })
+                });
+                if (!res.ok) throw new Error(`Token获取失败: ${res.status}`);
+                return (await res.json()).access_token;
+            },
+            
+            // 拉取单条记录详情（适配私有化，无appId）
+            async getRecordDetail(token, formId, recordId) {
+                const { apiDomain } = CONFIG.MINGDAO_API;
+                const res = await fetch(
+                    `${apiDomain}/open/v2/forms/${formId}/records/${recordId}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                if (!res.ok) throw new Error(`拉取记录失败: ${res.status}`);
+                return res.json();
+            },
+            
+            // 拉取关联记录（适配私有化，无appId）
+            async getRelatedRecords(token, targetFormId, linkField, sourceId) {
+                const { apiDomain } = CONFIG.MINGDAO_API;
+                const filter = `${linkField} eq '${sourceId}'`;
+                const res = await fetch(
+                    `${apiDomain}/open/v2/forms/${targetFormId}/records?filter=${encodeURIComponent(filter)}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                if (!res.ok) throw new Error(`拉取关联记录失败: ${res.status}`);
+                return res.json();
+            },
+            
+            // 拉取所有关联数据（核心：已填充销售订单字段）
+            async fetchData() {
+                // 调试模式用示例数据
+                if (CONFIG.DEBUG) {
+                    console.log('🔧 调试模式：使用示例数据');
+                    await this.sleep(500);
+                    return SAMPLE_DATA;
+                }
+                
+                // 真实环境拉取数据
+                const token = await this.getMingdaoToken();
+                const { 
+                    salesFormId, productionFormId, purchaseFormId,
+                    feedFormId, receiptFormId, batchFormId, deliveryFormId,
+                    linkFields: { productionToSales, purchaseToSales,
+                                  feedToProduction, receiptToFeed, batchToReceipt, deliveryToBatch }
+                } = CONFIG.MINGDAO_API;
+                
+                // 1. 拉取当前销售订单详情（已填充实际字段别名）
+                const salesOrder = await this.getRecordDetail(token, salesFormId, this.recordId);
+                const data = {
+                    销售订单: {
+                        订单号: salesOrder.fields["DocEntry"] || "未知订单号", // 销售订单号（字段别名：DocEntry）
+                        客户名称: salesOrder.fields["CardName"] || "未知客户", // 客户名称（字段别名：CardName）
+                        本币金额: salesOrder.fields["bbje"] || 0,            // 本币金额（字段别名：bbje）
+                        签订日期: salesOrder.fields["TaxDate"] || "未知日期",  // 签订日期（字段别名：TaxDate）
+                        业务类型: salesOrder.fields["SalesType"] || "未知类型",// 业务类型（字段别名：SalesType）
+                        状态: salesOrder.fields["zhuangtai"] || "未知状态",    // 订单状态（字段别名：zhuangtai）
+                        _id: salesOrder._id // 销售订单记录ID
+                    },
+                    生产订单: [],
+                    采购订单: [],
+                    投料记录: [],
+                    完工记录: [],
+                    成品批次: [],
+                    发货单: []
+                };
+                
+                // 2. 拉取关联的生产订单（需补充生产订单字段别名）
+                data.生产订单 = await this.getRelatedRecords(token, productionFormId, productionToSales, salesOrder._id);
+                data.生产订单 = data.生产订单.map(prod => ({
+                    生产订单号: prod.fields["生产订单号的字段别名"] || "未知编号", // 需补充：生产订单表的“编号”字段别名
+                    产品名称: prod.fields["产品名称的字段别名"] || "未知产品",   // 需补充：生产订单表的“产品名称”字段别名
+                    计划数量: prod.fields["计划数量的字段别名"] || 0,           // 需补充：生产订单表的“计划数量”字段别名
+                    实际数量: prod.fields["实际数量的字段别名"] || 0,           // 需补充：生产订单表的“实际数量”字段别名
+                    _id: prod._id
+                }));
+                
+                // 3. 拉取关联的采购订单（需补充采购订单字段别名）
+                data.采购订单 = await this.getRelatedRecords(token, purchaseFormId, purchaseToSales, salesOrder._id);
+                data.采购订单 = data.采购订单.map(pur => ({
+                    采购订单号: pur.fields["采购订单号的字段别名"] || "未知编号", // 需补充：采购订单表的“编号”字段别名
+                    供应商: pur.fields["供应商的字段别名"] || "未知供应商",     // 需补充：采购订单表的“供应商”字段别名
+                    采购数量: pur.fields["采购数量的字段别名"] || 0,           // 需补充：采购订单表的“采购数量”字段别名
+                    状态: pur.fields["状态的字段别名"] || "未知状态",           // 需补充：采购订单表的“状态”字段别名
+                    _id: pur._id
+                }));
+                
+                // 4. 拉取生产订单关联的投料记录（需补充投料表字段别名）
+                if (data.生产订单.length > 0) {
+                    const firstProd = data.生产订单[0];
+                    data.投料记录 = await this.getRelatedRecords(token, feedFormId, feedToProduction, firstProd._id);
+                    data.投料记录 = data.投料记录.map(feed => ({
+                        缸号: feed.fields["缸号的字段别名"] || "未知缸号",       // 需补充：投料表的“缸号”字段别名
+                        投料数量: feed.fields["投料数量的字段别名"] || 0,       // 需补充：投料表的“投料数量”字段别名
+                        批次: feed.fields["批次的字段别名"] || "未知批次",       // 需补充：投料表的“批次”字段别名
+                        状态: feed.fields["状态的字段别名"] || "未知状态",       // 需补充：投料表的“状态”字段别名
+                        _id: feed._id
+                    }));
+                }
+                
+                // 5. 拉取投料记录关联的完工记录（需补充完工表字段别名）
+                if (data.投料记录.length > 0) {
+                    const firstFeed = data.投料记录[0];
+                    data.完工记录 = await this.getRelatedRecords(token, receiptFormId, receiptToFeed, firstFeed._id);
+                    data.完工记录 = data.完工记录.map(receipt => ({
+                        缸号: receipt.fields["缸号的字段别名"] || "未知缸号",     // 需补充：完工表的“缸号”字段别名
+                        正品: receipt.fields["正品数量的字段别名"] || 0,         // 需补充：完工表的“正品数量”字段别名
+                        次品: receipt.fields["次品数量的字段别名"] || 0,         // 需补充：完工表的“次品数量”字段别名
+                        制成率: receipt.fields["制成率的字段别名"] || 0,         // 需补充：完工表的“制成率”字段别名
+                        _id: receipt._id
+                    }));
+                }
+                
+                // 6. 拉取完工记录关联的成品批次（需补充成品批次表字段别名）
+                if (data.完工记录.length > 0) {
+                    const firstReceipt = data.完工记录[0];
+                    data.成品批次 = await this.getRelatedRecords(token, batchFormId, batchToReceipt, firstReceipt._id);
+                    data.成品批次 = data.成品批次.map(batch => ({
+                        批次号: batch.fields["批次号的字段别名"] || "未知批次",   // 需补充：成品批次表的“批次号”字段别名
+                        数量: batch.fields["数量的字段别名"] || 0,               // 需补充：成品批次表的“数量”字段别名
+                        质量: batch.fields["质量的字段别名"] || "未知质量",       // 需补充：成品批次表的“质量”字段别名
+                        _id: batch._id
+                    }));
+                }
+                
+                // 7. 拉取成品批次关联的发货单（需补充发货单表字段别名）
+                if (data.成品批次.length > 0) {
+                    const firstBatch = data.成品批次[0];
+                    data.发货单 = await this.getRelatedRecords(token, deliveryFormId, deliveryToBatch, firstBatch._id);
+                    data.发货单 = data.发货单.map(del => ({
+                        发货单号: del.fields["发货单号的字段别名"] || "未知单号", // 需补充：发货单表的“发货单号”字段别名
+                        数量: del.fields["数量的字段别名"] || 0,               // 需补充：发货单表的“数量”字段别名
+                        状态: del.fields["状态的字段别名"] || "未知状态",       // 需补充：发货单表的“状态”字段别名
+                        _id: del._id
+                    }));
+                }
+                
+                return data;
+            },
+            
+            // 渲染完整流程图表（已适配销售订单字段显示）
+            async renderChart(data) {
+                console.log('🎨 渲染流程图...');
+                const { 
+                    salesFormId, productionFormId, purchaseFormId,
+                    feedFormId, receiptFormId, batchFormId, deliveryFormId 
+                } = CONFIG.MINGDAO_API;
+                const { apiDomain } = CONFIG.MINGDAO_API;
+                
+                // 生成Mermaid代码
+                let code = "graph LR\n";
+                
+                // 1. 销售订单节点（显示核心字段：订单号、客户、金额、日期、状态）
+                code += `    SO["<div data-formid='${salesFormId}' data-recordid='${this.recordId}'>📋 销售订单<br/>订单号：${data.销售订单.订单号}<br/>客户：${data.销售订单.客户名称}<br/>金额：${data.销售订单.本币金额.toLocaleString()}元<br/>日期：${data.销售订单.签订日期}<br/>状态：${data.销售订单.状态}</div>"]:::salesOrder\n`;
+                
+                // 2. 生产订单节点（需匹配补充的生产订单字段）
+                data.生产订单.forEach((prod, i) => {
+                    const prodId = `Prod${i}`;
+                    code += `    SO --> ${prodId}["<div data-formid='${productionFormId}' data-recordid='${prod._id}'>🏭 生产订单<br/>编号：${prod.生产订单号}<br/>产品：${prod.产品名称}<br/>进度：${prod.实际数量}/${prod.计划数量}米</div>"]:::production\n`;
+                    
+                    // 3. 投料记录节点（需匹配补充的投料表字段）
+                    data.投料记录.forEach((feed, j) => {
+                        const feedId = `Feed${i}_${j}`;
+                        const statusIcon = feed.状态 === "已投料" ? "✅" : "⏳";
+                        code += `    ${prodId} --> ${feedId}["<div data-formid='${feedFormId}' data-recordid='${feed._id}'>📦 投料-${feed.缸号}<br/>${statusIcon} ${feed.投料数量}米<br/>批次：${feed.批次}</div>"]:::feed\n`;
+                        
+                        // 4. 完工记录节点（需匹配补充的完工表字段）
+                        const receipt = data.完工记录.find(r => r.缸号 === feed.缸号);
+                        if (receipt) {
+                            const receiptId = `Receipt${i}_${j}`;
+                            code += `    ${feedId} --> ${receiptId}["<div data-formid='${receiptFormId}' data-recordid='${receipt._id}'>✅ 完工-${receipt.缸号}<br/>正品：${receipt.正品}米<br/>次品：${receipt.次品}米<br/>制成率：${receipt.制成率}%</div>"]:::receipt\n`;
+                            
+                            // 5. 成品批次节点（需匹配补充的成品批次表字段）
+                            const batch = data.成品批次.find(b => b.批次号.includes(receipt.缸号));
+                            if (batch) {
+                                const batchId = `Batch${i}_${j}`;
+                                const qualityIcon = batch.质量 === "正品" ? "✨" : "⚠️";
+                                code += `    ${receiptId} --> ${batchId}["<div data-formid='${batchFormId}' data-recordid='${batch._id}'>${qualityIcon} 成品批次<br/>编号：${batch.批次号}<br/>数量：${batch.数量}米</div>"]:::batch\n`;
+                                
+                                // 6. 发货单节点（需匹配补充的发货单表字段）
+                                const delivery = data.发货单.find(d => d.发货单号.includes(batch.批次号));
+                                if (delivery) {
+                                    const delId = `Del${i}_${j}`;
+                                    const delIcon = delivery.状态 === "已发货" ? "✅" : "⏳";
+                                    code += `    ${batchId} --> ${delId}["<div data-formid='${deliveryFormId}' data-recordid='${delivery._id}'>🚚 发货单<br/>编号：${delivery.发货单号}<br/>${delIcon} ${delivery.数量}米</div>"]:::delivery\n`;
+                                }
+                            }
+                        }
+                    });
+                });
+                
+                // 7. 采购订单节点（需匹配补充的采购订单字段）
+                data.采购订单.forEach((pur, i) => {
+                    const purId = `Pur${i}`;
+                    const purStatusIcon = pur.状态 === "已下单" ? "✅" : "⏳";
+                    code += `    SO --> ${purId}["<div data-formid='${purchaseFormId}' data-recordid='${pur._id}'>📦 采购订单<br/>编号：${pur.采购订单号}<br/>供应商：${pur.供应商}<br/>${purStatusIcon} ${pur.采购数量}件</div>"]:::purchase\n`;
+                    
+                    // （可选）采购订单后续流程（如入库、质检）可在此扩展
+                    // code += `    ${purId} --> Stock${i}["📥 采购入库<br/>..."]:::stock\n`;
+                });
+                
+                // 样式定义
+                code += `\n    classDef salesOrder fill:#409EFF,stroke:#337ecc,stroke-width:2px,color:#fff\n`;
+                code += `    classDef production fill:#E6A23C,stroke:#cf9236,stroke-width:2px,color:#fff\n`;
+                code += `    classDef purchase fill:#9C27B0,stroke:#8a219e,stroke-width:2px,color:#fff\n`;
+                code += `    classDef feed fill:#909399,stroke:#82848a,stroke-width:2px,color:#fff\n`;
+                code += `    classDef receipt fill:#67C23A,stroke:#5daf34,stroke-width:2px,color:#fff\n`;
+                code += `    classDef batch fill:#fff,stroke:#67C23A,stroke-width:2px,color:#67C23A\n`;
+                code += `    classDef delivery fill:#F56C6C,stroke:#e45656,stroke-width:2px,color:#fff\n`;
+                
+                // 渲染Mermaid图表
+                const chartElement = document.getElementById('mermaidChart');
+                chartElement.innerHTML = code;
+                await mermaid.run({ nodes: [chartElement] });
+                
+                // 显示图表+添加点击事件
+                document.getElementById('chartContainer').style.display = 'block';
+                this.addNodeClickEvents();
+            },
+            
+            // 节点点击跳转到明道云单据（适配私有化路径）
+            addNodeClickEvents() {
+                const nodes = document.querySelectorAll('.node');
+                const { apiDomain } = CONFIG.MINGDAO_API;
+                nodes.forEach(node => {
+                    node.style.cursor = 'pointer';
+                    node.addEventListener('click', function() {
+                        const formId = this.querySelector('[data-formid]')?.dataset.formid;
+                        const recordId = this.querySelector('[data-recordid]')?.dataset.recordid;
+                        if (formId && recordId) {
+                            const mingdaoUrl = `${apiDomain}/form/${formId}/record/${recordId}/view`;
+                            window.open(mingdaoUrl, '_blank');
+                        }
+                    });
+                });
+            },
+            
+            // 刷新数据
+            async refresh() {
+                console.log('🔄 刷新数据...');
+                await this.loadData();
+            },
+            
+            // 导出图片
+            exportImage() {
+                try {
+                    const svg = document.querySelector('.mermaid svg');
+                    if (!svg) {
+                        alert('没有找到图表');
+                        return;
+                    }
+                    
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    
+                    img.onload = function() {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                        
+                        canvas.toBlob(function(blob) {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `业务流程图_${data.销售订单.订单号}_${new Date().getTime()}.png`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        });
+                    };
+                    
+                    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                    
+                } catch (error) {
+                    console.error('导出失败:', error);
+                    alert('导出失败: ' + error.message);
+                }
+            },
+            
+            // 返回上一页/关闭窗口
+            goBack() {
+                if (window.opener) {
+                    window.close();
+                } else if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    alert('请关闭此窗口返回明道云');
+                }
+            },
+            
+            // 显示加载中
+            showLoading() {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('chartContainer').style.display = 'none';
+            },
+            
+            // 隐藏加载中
+            hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            },
+            
+            // 显示错误信息
+            showError(message) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('errorMessage').textContent = message;
+                document.getElementById('chartContainer').style.display = 'none';
+            },
+            
+            // 工具函数：延迟
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        };
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
 </html>
