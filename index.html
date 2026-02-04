@@ -41,7 +41,11 @@
         </div>
         
         <div id="chartContainer" class="chart-container" style="display: none;">
-            <div class="mermaid" id="mermaidChart"></div>
+            <!-- 修改：确保Mermaid容器可见 -->
+            <div class="mermaid" id="mermaidChart" style="min-height: 600px; display: flex; justify-content: center; align-items: center;">
+                graph LR
+                    Loading[正在加载...]
+            </div>
         </div>
         
         <div class="legend">
